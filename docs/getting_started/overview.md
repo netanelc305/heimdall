@@ -1,5 +1,4 @@
-[![Documentation Status](https://readthedocs.org/projects/heimdal/badge/?version=latest)](https://heimdal.readthedocs.io/en/latest/?badge=latest)
-
+# Overview
 
 `Heimdall` is a Virtual Machine (VM) introspection tool built on top of [`libvmi`](https://github.com/libvmi/libvmi)
 that
@@ -11,8 +10,6 @@ and modify kernel structures. This includes retrieving process lists, modifying 
 interacting with other kernel data structures. `Heimdall` also supports accessing a process's execution context,
 providing
 powerful insights and control over VM internals.
-
-
 
 This project is highly inspired by:
 
