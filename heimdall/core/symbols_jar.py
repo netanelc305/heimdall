@@ -9,44 +9,11 @@ from heimdall.core.isf_file import ISFFile
 
 logger = logging.getLogger(__name__)
 TYPE_MAPPING = {
-    'int': ('i', 4),
-    'str': ('str', None),
-    'arr': ('B', None),
-    'short': ('h', 2),
-    'char': ('c', 1),
-    'double': ('d', 8),
-    'float': ('f', 4),
-    'long': ('q', 8),
-    'longlong_unsigned': ('Q', 8),
-    'unsigned_int': ('I', 4),
-    'unsigned_short': ('H', 2),
-    'unsigned_char': ('B', 1),
-    'unsigned_int128': ('QQ', 16),
-    'pointer': ('Q', 8),
-    '__ARRAY_SIZE_TYPE__': ('Q', 8),
-    'bool': ('?', 1),
-    '_Bool': ('?', 1),
-    'signed char': ('b', 1),
-    'long int': ('q', 8),
-    'long long int': ('q', 8),
-    'long long': ('q', 8),
-    'unsigned long long': ('Q', 8),
-    'long long unsigned int': ('Q', 8),
-    'long unsigned int': ('Q', 8),
-    'unsigned char': ('B', 1),
-    'unsigned int': ('I', 4),
-    'unsigned short': ('H', 2),
-    'unsigned long': ('Q', 8),
-    'unsigned __int128': ('QQ', 16),
-    'void': ('Q', 8),  # same as pointer
-    'HRESULT': ('I', 4),  # Based on 'unsigned int'
-    'f32': ('f', 4),  # Same as 'float'
-    'wchar': ('H', 2),  # 2-byte wchar
-    '__int128': ('QQ', 16),
-    '__int128 unsigned': ('QQ', 16),
-    'short int': ('h', 2),
-    'short unsigned int': ('H', 2),
-    'ssizetype': ('q', 8),  # Assuming ssize_t to be equivalent to signed long
+    'bool': {1: '?'},
+    'char': {1: 'C'},
+    'int': {1: 'B', 2: 'H', 4: 'I', 8: 'Q', 16: 'QQ'},
+    'float': {2: 'E', 4: 'F', 8: 'D'},
+    'void': {0: 'x'},
 }
 
 
@@ -156,8 +123,16 @@ class SymbolsJar:
             A progress bar instance to update during the resolution process.
         """
         for name, dtype in self._profile.base_types.items():
+            kind, size, signed = dtype['kind'], dtype['size'], dtype['signed']
+            try:
+                fmt = TYPE_MAPPING[kind][size]
+            except KeyError:
+                logger.warning(f"Unsupported base type: {kind} ({size} bytes) default to void")
+                fmt = 'x'
+            if signed:
+                fmt.lower()
             self.base_types[name] = BaseKind(
-                name, dtype['size'], fmt=TYPE_MAPPING[name][0]
+                name, size, fmt=fmt
             )
             pbar.update(1)
 
@@ -189,9 +164,9 @@ class SymbolsJar:
         """
         enums_data = self._profile.enums.items()
         for name, edata in enums_data:
-            fmt, size = TYPE_MAPPING[edata['base']]
+            _type = self.base_types[edata['base']]
             self.enums[name] = EnumKind(
-                name=name, size=size, fmt=fmt, constants=edata['constants']
+                name=name, size=_type.size, fmt=_type.fmt, constants=edata['constants']
             )
             pbar.update(1)
 
@@ -268,11 +243,12 @@ class SymbolsJar:
         PointerKind
             The resolved pointer kind descriptor.
         """
+        ptr = self.base_types[data['kind']]
         return PointerKind(
             name=data['kind'],
             subtype=self._kind_factory(data['subtype']),
-            fmt=TYPE_MAPPING[data['kind']][0],
-            size=TYPE_MAPPING[data['kind']][1]
+            fmt=ptr.fmt,
+            size=ptr.size
         )
 
     @staticmethod
@@ -292,8 +268,7 @@ class SymbolsJar:
         """
         return UnresolvedKind(name=data['kind'], data=data, size=0)
 
-    @staticmethod
-    def _resolve_function(data: dict) -> FunctionKind:
+    def _resolve_function(self, data: dict) -> FunctionKind:
         """
         Resolve a function kind.
 
@@ -307,14 +282,14 @@ class SymbolsJar:
         FunctionKind
             The resolved function kind descriptor.
         """
+        ptr = self.base_types['pointer']
         return FunctionKind(
             name=data['kind'],
-            fmt=TYPE_MAPPING['pointer'][0],
-            size=TYPE_MAPPING['pointer'][1]
+            fmt=ptr.fmt,
+            size=ptr.size
         )
 
-    @staticmethod
-    def _resolve_class(data: dict) -> ClassKind:
+    def _resolve_class(self, data: dict) -> ClassKind:
         """
         Resolve a class kind.
 
@@ -328,10 +303,11 @@ class SymbolsJar:
         ClassKind
             The resolved class kind descriptor.
         """
+        ptr = self.base_types['pointer']
         return ClassKind(
             name=data['name'],
-            fmt=TYPE_MAPPING['pointer'][0],
-            size=TYPE_MAPPING['pointer'][1]
+            fmt=ptr.fmt,
+            size=ptr.size
         )
 
     def _resolve_bitfield(self, data: dict) -> BitFieldKind:
