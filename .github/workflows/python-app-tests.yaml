@@ -1,0 +1,57 @@
+name: Python App tests
+
+on:
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        python-version: [ 3.9, "3.10", "3.11", "3.12", "3.13" ]
+        os: [ ubuntu-latest ]
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          lfs: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          sudo apt-get update &&  sudo apt install megatools git build-essential gcc libtool cmake pkg-config check libglib2.0-dev libvirt-dev flex bison libjson-c-dev
+          pip install --upgrade pip
+          pip install pytest
+
+
+      - name: Clone and install libvmi
+        run: |
+          git clone https://github.com/libvmi/libvmi.git
+          cd libvmi
+          cmake -B build -DENABLE_XEN=OFF -DENABLE_BAREFLANK=OFF -DBUILD_EXAMPLES=OFF
+          cmake --build build
+          sudo cmake --build build --target install
+          sudo ldconfig
+
+      - name: Install libvmi-python
+        run: |
+          git clone https://github.com/libvmi/python.git libvmi-python
+          cd libvmi-python
+          pip install .
+
+      - name: Install Heimdall
+        run: |
+          pip install .
+
+      - name: Decompress Memory dump
+        run: |
+          mkdir -p tests/test_files && cd tests/test_files
+          megadl https://mega.nz/folder/ItAmRTRL#v6KeMRmbVW5kJt3f4jFgBw
+          zstd -d memory_dumps/ubuntu.mem.zst -o memory_dumps/ubuntu.mem
+      - name: Run pytest
+        run: |
+          pytest -v tests/

@@ -5,7 +5,8 @@ from typing import Optional, Union
 
 from capstone import CS_ARCH_X86, CS_MODE_64, CS_MODE_LITTLE_ENDIAN, Cs, CsInsn
 
-from heimdall.core.descriptors import ArrayKind, BitFieldKind, ComplexKind, DescriptorType, PointerKind, UnresolvedKind
+from heimdall.core.descriptors import ArrayKind, BaseKind, BitFieldKind, ComplexKind, DescriptorType, PointerKind, \
+    UnresolvedKind
 
 logger = logging.getLogger(__name__)
 
@@ -211,10 +212,14 @@ class Symbol:
     def _handle_array_kind(self, idx: int) -> Union[str, tuple]:
         """Handle array kind."""
         if self.descriptor.subtype.name in ['char', 'unsigned char']:
-            return self.ctx.vm_access.read_str(self.address + idx * self.descriptor.size)
+            ret = self.ctx.vm_access.read_str(self.address + idx * self.descriptor.size)
         else:
-            data = self.ctx.vm_access.read(self.address + idx * self.descriptor.size, self.descriptor.size)
-            return struct.unpack(self.descriptor.count * self.descriptor.subtype.fmt, data)
+            if isinstance(self.descriptor.subtype, BaseKind):
+                data = self.ctx.vm_access.read(self.address + idx * self.descriptor.subtype.size, self.descriptor.size)
+                ret = struct.unpack(self.descriptor.count * self.descriptor.subtype.fmt, data)
+            else:
+                ret = self.ctx.symbol(self.address + idx * self.descriptor.subtype.size, self.descriptor.subtype)
+        return ret
 
     def _handle_array_kind_set(self, idx: int, value: Union[str, tuple]) -> None:
         """Handle setting array kind."""

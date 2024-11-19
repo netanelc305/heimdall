@@ -10,10 +10,10 @@ from heimdall.core.isf_file import ISFFile
 logger = logging.getLogger(__name__)
 TYPE_MAPPING = {
     'bool': {1: '?'},
-    'char': {1: 'C'},
-    'int': {1: 'B', 2: 'H', 4: 'I', 8: 'Q', 16: 'QQ'},
-    'float': {2: 'E', 4: 'F', 8: 'D'},
-    'void': {0: 'x'},
+    'char': {1: 'B'},
+    'int': {2: 'H', 4: 'I', 8: 'Q', 16: 'QQ'},
+    'float': {2: 'e', 4: 'f', 8: 'd'},
+    'void': {0: 'P'},
 }
 
 
@@ -130,7 +130,7 @@ class SymbolsJar:
                 logger.warning(f"Unsupported base type: {kind} ({size} bytes) default to void")
                 fmt = 'x'
             if signed:
-                fmt.lower()
+                fmt = fmt.lower()
             self.base_types[name] = BaseKind(
                 name, size, fmt=fmt
             )
