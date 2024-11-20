@@ -34,21 +34,14 @@ make
 sudo make install
 ```
 
-## 2. Install  [`libvmi-python`](https://github.com/libvmi/python)
+## 2. Install `Heimdall` and [`libvmi-python`](https://github.com/libvmi/python)
 
 ```shell
+python3 -m pip install heimdall-vmi
 git clone https://github.com/libvmi/python libvmi-python
 cd libvmi-python
 python3 setup.py build
 python3 setup.py install
-```
-
-## 3. Install `Heimdall`
-
-Finally, install `Heimdall` itself:
-
-```shell
-python3 -m pip install heimdall-vmi
 ```
 
 > **Note**: If you prefer not to use `sudo` when running `Heimdall`, I recommend installing it with `pipx`. After
@@ -59,12 +52,17 @@ To install `Heimdall` using `pipx`:
 
 ```shell
 pipx install heimdall-vmi
+source ~/.local/pipx/venvs/heimdall-vmi/bin/activate
+git clone https://github.com/libvmi/python libvmi-python
+cd libvmi-python
+python3 setup.py build
+python3 setup.py install
 ```
 
 Then, set `setuid` permissions on the virtual environment’s binaries:
 
 ```shell
-sudo chmod u+s $(which heimdall-vmi)
+sudo chmod u+s $(which heimdall)
 ```
 
 This will allow `Heimdall` to execute with necessary permissions directly from the `pipx` virtual environment.

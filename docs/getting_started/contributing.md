@@ -28,9 +28,25 @@ Follow these guidelines when implementing changes:
 - **Follow Code Style**: Ensure code is formatted with type hints, and docstrings follow the NumPy style.
 - **Add Tests**: If your PR changes functionality or fixes a bug, include tests.
 - **Document**: Update the README or other relevant documentation to reflect changes.
-- **Run Tests**: Confirm all tests pass before submitting your PR.
 
-## Step 4: Commit Changes
+## Step 4: Test Your Code
+1. **Download Test Files**: Download the necessary test files using `megadl`:
+   ```bash
+   mkdir  tests/test_files && cd tests/test_files
+   megadl https://mega.nz/folder/ItAmRTRL#v6KeMRmbVW5kJt3f4jFgBw
+   ```
+
+2. **Run Tests**: Ensure all tests pass.
+   ```bash
+   pytest tests/
+   ```
+
+3. **Check Code Style**: Run pre-commit hooks to check code style.
+   ```bash
+   pre-commit run --all-files
+   ```
+
+## Step 5: Commit Changes
 
 Use clear, concise commit messages in the format:
 
@@ -45,7 +61,8 @@ git add .
 git commit -m "FIX: symbols_jar"
 ```
 
-## Step 5: Push Changes
+
+## Step 6: Push Changes
 
 Push your branch to your forked repository.
 
@@ -53,7 +70,7 @@ Push your branch to your forked repository.
 git push origin feature/your-feature-name
 ```
 
-## Step 6: Submit a PR
+## Step 7: Submit a PR
 
 1. **Navigate**: Go to the original Heimdall repository and click on "New Pull Request."
 2. **Select Branch**: Select the branch from your fork with your changes.
